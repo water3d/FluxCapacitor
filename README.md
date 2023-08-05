@@ -1,5 +1,6 @@
 
-# Flux Capacitor
+#
+Flux Capacitor
 Water balance modeling for agricultural fields using future climate scenarios compared with today.
 
 ## Pseudocode Plan
@@ -21,6 +22,13 @@ Extract ET for many years in the future from climate models. Use scaling factor 
 Simultaneously, compare total precipitation from those years to total precipitation of the baseline years for a large surrounding area.
 Do we need to add any additional water demand based on specific humidity? Or will that be captured in the ET estimate?
 Present user with future water need differenced with current water needs (based on ET) - Describe whether the surrounding area is expected to have more, similar, or less water too, so they can assess if they may actually be able to acquire the water or not.
+
+
+Challenges - much of the scarcity will actually be driven by reductions in precip or pumping restrictions (CA) in some areas, but that's hard to quantify
+because of water rights and potential for markets. Can we say "the catchment that flows into your area will lose ___ water",
+but then how do we handle water imports in a simple manner?
+
+Still also have the increased ET demand from the atmosphere, but that's only a piece of the puzzle. Need a more comprehensive model
 
 
 ## What's with the name??
