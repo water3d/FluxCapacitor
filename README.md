@@ -1,7 +1,11 @@
 
 #
 Flux Capacitor
-Water balance modeling for agricultural fields using future climate scenarios compared with today.
+This project has ended up being dual use, with both elements feeding into [Secure Water Future](https://securewaterfuture.net) and [Water3D](https://waterdecisions.app).
+1. Integrating, updating, and scaling pixel and polygon-based phenometrics calculations to run over large areas for further analysis as well as on-demand. See run_phenolopy_example.py and vw_extraction_pseudocode.py (for now) for examples of this.
+2. Water balance modeling for agricultural fields using future climate scenarios compared with today (our main vision for Water3D)
+
+At some point these will need better integration into a database-backed API, but for now we're piloting models in this codebase.
 
 ## Pseudocode Plan
 1. User provides field boundary (likely via clicking field boundaries)

@@ -2,21 +2,31 @@ from phenolopy import phenolopy
 import rioxarray
 import seaborn
 from matplotlib import pyplot as plt
+import pandas
 
 from datetime import datetime
 
 def run():
-    data = rioxarray.open_rasterio("/home/nick/Code/FluxCapacitor/phenolopy/test_data/s2_msavi_timeseries_sample.tif")
+    data = rioxarray.open_rasterio("/home/nick/Code/FluxCapacitor/phenolopy/test_data/s2_msavi_timeseries_small_area_sample.tif")
     data = data.rename({'band': 'time'})  # the "band" dimension is basically the time dimension
     data['time'] = [datetime.strptime(item.split("_")[1], "%Y-%m-%d") for item in data.long_name]  # parse out times from the long-name field coming from the band name in the TIF and replace the time dimension
 
-    results = phenolopy.calc_phenometrics(data)  # then calculate the phenometrics. This seems to work to a point, then crash when merging the results back together, possibly due to how I'm handling the above.
+    ds = data.to_dataset(name="veg_index")
+    outliers_removed = phenolopy.remove_outliers(ds)
+    smoothed = phenolopy.smooth(outliers_removed, method="symm_gaussian", window_length=9, polyorder=1)
+    results = phenolopy.calc_phenometrics(smoothed.to_array())  # then calculate the phenometrics. This seems to work to a point, then crash when merging the results back together, possibly due to how I'm handling the above.
 
     print(results)
-    return results
+    return {
+            "original": data,
+            "outliers_removed_ds": outliers_removed,
+            "smoothed_ds": smoothed,
+            "results": results
+            }
 
 
-def plot_example(data_array, x, y):
+
+def plot_example(original, no_outliers, smoothed, x=None, y=None, plotall=False):
     """
         The following will plot the timeseries for a given x or y (in the units of the coordinate system. We could
         make something that retrieves the coordinates for a pixel grid x/y too, but this uses the coordinates, as
@@ -40,7 +50,48 @@ def plot_example(data_array, x, y):
         Last thing, we need to check how much impact we're getting from clouds. Is the algorithm properly smoothing? Is
         it generating the correct phenometrics?
     """
-    seaborn.lineplot(x=data_array['time'].data, y=data_array.sel(x=x, y=y).data)
-    plt.show()
+    if x is None:  # if the coordinates aren't provided, just use the origin
+        x = int(original.x[0])
+    if y is None:
+        y = int(original.y[0])
 
-results = run()
+    no_outliers = no_outliers.to_array()
+    smoothed = smoothed.to_array()
+
+    if not plotall:
+        plot_single(no_outliers, original, smoothed, x, y)
+    else:
+        for x in range(len(original.x)):
+            x_coord = int(original.x[x])
+            for y in range(len(original.y)):
+                y_coord = int(original.y[y])
+                plot_single(no_outliers, original, smoothed, x_coord, y_coord)
+
+
+def plot_single(no_outliers, original, smoothed, x, y):
+    results = {
+        "time": original['time'].data,
+        "original": original.sel(x=x, y=y).data,
+        "no_outliers": no_outliers.sel(x=x, y=y).data[0],
+        "smoothed": smoothed.sel(x=x, y=y).data[0]
+    }
+    rdf = pandas.DataFrame(results)
+    rdf.set_index("time", inplace=True)
+    plot = seaborn.lineplot(rdf)
+    plot.get_figure().savefig(f"/home/nick/Code/FluxCapacitor/plots/plot_vw_{x}_{y}.png")
+    plt.clf()
+
+
+if __name__ == "__main__":
+    results = run()
+    plot_example(original=results["original"],
+             no_outliers=results["outliers_removed_ds"],
+             smoothed=results["smoothed_ds"],
+            x=630065, y=4087565, plotall=False
+             )
+    sample_results = results["results"].sel(x=630065, y=4087565)
+    print(f"Start of Season: {int(sample_results.sos_times)}")
+    print(f"Peak of Season: {int(sample_results.pos_times)}")
+    print(f"End of Season: {int(sample_results.eos_times)}")
+
+

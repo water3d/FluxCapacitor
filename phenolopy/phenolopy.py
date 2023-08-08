@@ -298,7 +298,7 @@ def remove_outliers(ds, method='median', user_factor=2, z_pval=0.05, force_1d=Tr
 		# shift values left and right one time index and combine, get mean and max for each window
 		lefts, rights = ds.shift(time=1).where(outlier_mask), ds.shift(time=-1).where(outlier_mask)
 		nbr_means = (lefts + rights) / 2
-		nbr_maxs = xr.ufuncs.fmax(lefts, rights)
+		nbr_maxs = np.fmax(lefts, rights)
 
 		# keep nan only if middle val < mean of neighbours - cutoff or middle val > max val + cutoffs
 		outlier_mask = xr.where((ds.where(outlier_mask) < (nbr_means - cutoffs)) |
@@ -728,7 +728,8 @@ def smooth(ds, method='savitsky', window_length=3, polyorder=1, sigma=1, force_1
 		Standard deviation for Gaussian kernel. The standard deviations of the Gaussian filter
 		must be provided as a single number between 1-9.
 	force_1d: bool
-		Allows smoothing of a 1-dimensional dataset, which by default will raise an error
+		Allows smoothing of a 1-dimensional dataset, which by default will raise an error. Nick added this to attempt
+		to not use a spatial window - not advised to use this except in testing right now.
 
 	Returns
 	-------
